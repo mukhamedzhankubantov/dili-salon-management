@@ -1,6 +1,6 @@
 # Дереккөздер және шешімдер тізілімі
 
-Тексеру күні: **2026-11-13**. Төмендегі құжаттар технологияның ресми мінез-құлқын тексеру үшін қолданылды. Dili-дің рөлдері, бизнес workflow-ы, кестелері және кезеңдері — осы жобаға ұсынылған инженерлік шешімдер; олар платформалардың дайын талабы емес.
+Нақтылану күні: **2026-11-13**. Төмендегі ресми сілтемелер бастапқы зерттеу мен архитектура шолуында қолданылды; осы documentation-only кезеңі жаңа құқықтық/платформалық тексеру жүргізілді дегенді білдірмейді. Техникалық шешімдердің бір бөлігі пайдаланушы тарапынан бекітілді; нақты салон рәсімдері мен адамдардың өкілеті [бизнес болжамдарында](06-business-assumptions.md) бөлек ашық қалады.
 
 ## 1. Ресми дереккөздер
 
@@ -19,25 +19,43 @@
 
 ## 2. Архитектуралық шешімдер
 
-Барлық жолдардың мәртебесі: **ұсынылған**. Review нәтижесінде accepted/revised күйіне көшеді.
+`accepted` — бекітілген техникалық талап; `proposed` — іске асыру/операциялық нақтылауы бар ұсыныс. Accepted мәртебесі код жазылды немесе салон рәсімі расталды дегенді білдірмейді.
 
-| ID | Шешім | Себебі және салдары |
+| ID | Мәртебе | Шешім | Негіздеме және шектеу |
+| --- | --- | --- | --- |
+| ADR-001 | accepted | Бір салон, KZT, модульдік Next.js монолит | Бекітілген бастапқы шекара; көпфилиалды өнім MVP емес |
+| ADR-002 | accepted | PostgreSQL — негізгі факт көзі | Relational integrity; нақты деректер Git-ке кірмейді |
+| ADR-003 | accepted | Қызмет пен payment бөлек | Бір visit-ке бірнеше service және split receipts; allocations тек бизнес қажет болса |
+| ADR-004 | accepted, revised | Қызмет capture-ы комиссияға тәуелсіз | Missing rule → pending/null; confirmed snapshot өзгермейді; формула A04/A12 әлі ашық |
+| ADR-005 | accepted | Append-only ақша және correction тарихы | Original command өзгермейді; жаңа correction command, reversal FK және audit тізбегі |
+| ADR-006 | accepted | DB atomic command және idempotency | Retry дубль жасамайды; адам қайта енгізген candidate үшін бөлек quality check |
+| ADR-007 | accepted | Auth, active identity/membership/link, RLS | Shared visit grants құпия сомаларды ашпайды; elevated RPC бөлек тексеріледі |
+| ADR-008 | proposed | Online-first MVP | Offline sync кейін; уақытша журнал/алмастырушы A24/A31 арқылы расталады |
+| ADR-009 | accepted, revised | Effective/recorded/correction уақыттарын бөлу | Тарихи түзету бүгінгі жалған cash емес; snapshot immutable, restated бөлек; күн жабу өкілеті A14 |
+| ADR-010 | accepted | Anonymous walk-in | Клиентті байланыстыру міндетті емес; retention қамтуы бөлек |
+| ADR-011 | proposed | Hosting дерек талабына тәуелді | Нақты орналасу, Auth/logs/backups және құқықтық негіз A20/A21 арқылы шешіледі |
+| ADR-012 | accepted | Ескі Excel автоматты импортталмайды | Кейін staging/provenance/verification; нақты import осы кезеңде жоқ |
+| ADR-013 | accepted | Қазақша/орысша | Негізгі жоба талабы; default тіл A24 арқылы |
+| ADR-014 | accepted | Analytics сенімді дерекке сүйенеді | Pending/incomplete және бақыланған тарих шектеуі есепте көрсетіледі |
+| ADR-015 | accepted | Controlled shared visit contributions | Active participant өз service-ін қосады; assignment operator/алмастырушы A29 |
+| ADR-016 | accepted | Owner-only employee-account links | Уақыттық link history, атомарлы reassignment, current ownership RLS, immutable actors |
+| ADR-017 | accepted | Employee-day verification + ақша reconciliation | Екі бөлек бақылау; service өзгерсе verification stale; cohort/мерзім A30 |
+| ADR-018 | accepted | Late entry және unresolved quality worklist | Reason/authorization, effective кезең, candidate review; SLA/оператор A31/A32 |
+| ADR-019 | proposed | Cash opening chain және transaction-ordered sequence | P1 шешімінің нақты моделі: opening FK, snapshot cutoff; бір салон write lock-ы, нақты DDL кейін |
+
+## 3. P1 шешімдерінің қадағалануы
+
+| Шолу мәселесі | Құжатталған шешім | Қабылдау критерийлері |
 | --- | --- | --- |
-| ADR-001 | Модульдік Next.js монолит | Бір салонға жеткілікті, deployment және транзакцияларды түсіну оңай; кейін модуль бөлуге болады |
-| ADR-002 | PostgreSQL — негізгі факт көзі | Relational integrity мен атомарлыққа сүйенеміз; Excel — тек кейінгі verified import/export көзі |
-| ADR-003 | Қызмет пен payment бөлек | Partial/split payment, debt және refund қызмет фактісін бұзбайды |
-| ADR-004 | Орындалған қызмет және earnings snapshot | Каталог/комиссия өзгерісі өткен тарихты қайта есептемейді |
-| ADR-005 | Append-only ақша, explicit corrections | Actor/reason/original reference арқылы қадағалау; кесте саны қарапайым CRUD-тан көбірек |
-| ADR-006 | DB транзакциясы + idempotency | Double tap, network retry, concurrent refund және day-close қауіптерін шешеді |
-| ADR-007 | Auth + active membership + RLS | UI-ды айналып өтсе де деректер шекарасы бар; elevated RPC міндетті жеке тексеріледі |
-| ADR-008 | Online-first MVP | Тұрақты offline sync қақтығыстарын бастапқы өнімге қоспау; уақытша журнал тәртібі қажет |
-| ADR-009 | Күн жабу snapshot-ы, кейінгі күнге correction | Жабылған есеп сақталады; restated report бөлек көрсетіледі |
-| ADR-010 | Anonymous walk-in рұқсат | Дерек енгізуді жеңілдетеді; retention аналитикасының қамтуы бөлек өлшенеді |
-| ADR-011 | Hosting шешімі деректер талабына тәуелді | Supabase/Vercel стек ниеті сақталады, бірақ нақты deployment архитектурасы тексеруден өтеді |
-| ADR-012 | Ескі Excel автоматты импортталмайды | Белгісіз толықтық/дәлдік жаңа сенімді dataset-ті бұзбауы тиіс |
-| ADR-013 | Екі тіл ең басынан | Формалар мен қателерді кейін толық қайта жазуды болдырмайды |
-| ADR-014 | Analytics кейін біртіндеп кеңейеді | Алдымен операция мен анық метрика; production admin credential BI-ге берілмейді |
+| Комиссия жоқта қызмет жоғалады | Pending projection, immutable confirmed earnings және quality issue | AC-01, AC-02, AC-16 |
+| Кешегі correction бүгін cash жасайды | Effective күн бойынша есеп, бөлек recorded/corrected уақыт, immutable snapshot/opening chain | AC-04, AC-05, AC-06, AC-14 |
+| Бір тіркеушіге тәуелділік және shared visit құпиялығы | Visit participants, өз performer-і, минимал DTO; оператор/алмастырушы ашық болжам | AC-07, AC-08, AC-10, AC-11 |
+| Admin employee binding-ті өзгерте алады | Generic edit-тен binding алып тастау, Owner-only links/reassignment | AC-09, AC-15 |
+| Тіркелмеген/толық емес операциялар байқалмайды | Employee verification, issue worklist және тәуелсіз reconciliation; толықтық кепілдігі деп көрсетілмейді | AC-10, AC-11, AC-12 |
+| Original/correction history байланысы қайшы | Original command сақталады, жаңа correction FK/command, атомарлы audit | AC-13, AC-14 |
 
-## 3. Осы кезеңде жасалмаған әрекеттер
+AC анықтамалары: [MVP қабылдау критерийлері](02-mvp-specification.md#8-қабылдау-критерийлері). Тесттермен байланысы: [жол картасы](05-roadmap-testing-deployment.md#қабылдау-критерийлерінің-тесттермен-байланысы).
 
-Қолданба scaffold-ы, пакет орнату, DB migration орындау, GitHub репозиторийін ашу, Supabase/Vercel ресурс жасау, төлем, deployment және нақты клиент дерегін импорттау орындалған жоқ. Құжаттар — implementation бастауға арналған review материалы.
+## 4. Осы кезеңнің шекарасы
+
+Бар Git репозиторийінде сегіз planning Markdown файлын нақтылау, documentation checks, commit және рұқсатты push — осы кезеңнің жұмысы. Жаңа репозиторий/сыртқы ресурс, қолданба scaffold-ы, пакет орнату, SQL migration, deployment немесе нақты клиент/қаржы дерегін импорттау жасалмайды. Commit/push нақты нәтижесі task есебінде көрсетіледі; болашақ application acceptance tests орындалды деп мәлімделмейді.

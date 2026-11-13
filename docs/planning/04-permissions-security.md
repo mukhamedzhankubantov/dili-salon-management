@@ -2,17 +2,20 @@
 
 ## 1. Рөлдер матрицасы
 
-Бұл — бастапқы least-privilege ұсынысы. Нақты қызметкерлердің міндеттері [бизнес болжамдары](06-business-assumptions.md) арқылы расталады. Owner — қолданбадағы рөл; ол PostgreSQL superuser немесе Supabase жобасының әкімшісі дегенді білдірмейді.
+Бекітілген техникалық шекаралар: Employee өзінің қызметін тіркейді/растайды; ортақ visit қатысуы басқа маманның құпия дерегін ашпайды; employee-account link/reassign тек Owner-ға тиесілі; сезімтал historical correction Owner approval талап етеді. Төмендегі өзге өкілеттер — least-privilege операциялық ұсыныс, салонның қазіргі рәсімі емес; нақты адамдар, алмастырушы және күн жабу шектері [бизнес болжамдары](06-business-assumptions.md) арқылы расталады. Owner — қолданбадағы рөл, PostgreSQL superuser емес.
 
 | Әрекет | Owner | Administrator | Employee |
 | --- | --- | --- | --- |
 | Қызмет каталогын оқу | Барлығы | Барлығы | Белсенді каталог |
 | Каталог/баға өзгерту, архивтеу | Иә | Иә, аудитпен | Жоқ |
 | Қызметкер карточкасын басқару | Иә | Иә, рөл мен комиссиясыз | Өз карточкасын оқу |
+| Employee-account link/reassign | Иә, арнайы reason/audit командасымен | Жоқ | Жоқ |
 | Аккаунт шақыру, рөл беру/бұғаттау | Иә | Жоқ | Жоқ |
 | Комиссия ережелерін өзгерту | Иә | Жоқ | Жоқ |
 | Қызметтерді көру | Салон бойынша | Салон бойынша | Өзі орындаған жолдар |
-| Қызмет енгізу | Кез келген орындаушы | Кез келген орындаушы | Тек өзі үшін, стандартты бағамен |
+| Қызмет енгізу | Кез келген орындаушы | Кез келген орындаушы | Өзі ашқан не active participant болған келуге тек өзі үшін; pending комиссиямен де |
+| Ортақ келуге маман қосу/алып тастау | Иә | Иә, операциялық ұсыныс | Өз жаңа келуіне автоматты қатысу; басқа маманға grant бермейді |
+| Күндік жеке қызметтерді растау | Өз employee байланысы болса өзі үшін | Өз employee байланысы болса өзі үшін | Тек өз тізімінің ағымдағы нұсқасы |
 | Жеңілдік/ерекше баға | Иә | Ашық күні, себеппен | Жоқ |
 | Клиент карточкасы және телефон | Иә | Иә | Жоқ; өз қызметіне қажет masked summary ғана |
 | Клиентті келуге байланыстыру | Иә | Иә | Жоқ; аноним келу тіркей алады |
@@ -20,18 +23,25 @@
 | Нақты refund | Иә | Сұрау ғана | Жоқ |
 | Қате payment reversal + replacement | Иә | Өзгеріс ашық ағымдағы күндегі бастапқы жазбаға қатысты болса, себеппен | Жоқ |
 | Service correction/void | Иә | Ашық ағымдағы күнге, себеппен | Өз жолына сұрау ғана |
-| Жабылған кезеңге қатысты түзету | Ағымдағы күнге, себеппен | Сұрау ғана | Өз жолына сұрау ғана |
+| Жабылған кезеңге қатысты түзету | Бастапқы/дұрыс effective кезеңге, бүгін recorded/себеппен | Сұрау ғана | Өз жолына сұрау ғана |
+| Late entry | Рөліне сай; жабық effective кезеңге approval | Ашық effective күндегі рұқсатты операция, себеппен | Ашық effective күнде өзінің қызметі, себеппен; басқа жағдайда сұрау |
 | Операциялық шығын | Иә | Ағымдағы күнде тіркеу/қарау | Жоқ |
 | Cash float/инкассация | Иә | Сұрау ғана | Жоқ |
-| Күнді жабу | Иә | Айырмашылық нөл болса | Жоқ |
-| Нөл емес айырмашылықты бекіту | Иә | Дайындау ғана | Жоқ |
+| Күнді жабу | Бекітілетін рәсім бойынша | Дайындау/өкілет берілгенде жабу | Жоқ |
+| Ақша айырмасы/тексеру exception-ын бекіту | Ұсынылған жауапты | Дайындау; нақты шек A14 арқылы | Жоқ |
 | Есептелген табысты көру | Барлығы | Жоқ | Тек өзінікі |
+| Pending комиссияны шешу | Иә, confirm_commission | Тек операциялық күй/сан, сома/ереже жоқ | Өз pending күйін көру, ережені бекітпейді |
+| Дерек сапасы мәселелерін қарау | Салон бойынша | Операциялық мәселелер; сезімтал correction-ға сұрау | Өз мәселелері, басқа visit/employee дерегі жоқ |
 | Dashboard | Барлық метрика | Күнделікті қызмет/төлем/шығын, комиссиясыз | Өз қызметі/табысы |
 | CSV/XLSX | Рұқсат етілген барлық есеп | Операциялық есеп, клиент PII/комиссиясыз | Жоқ |
 | Аудит | Салон бойынша | Операциялық нысандар, рөл/комиссия/PII-сіз | Өз correction сұрауының тарихы |
 | Audit/қаржы тарихын жою | Жоқ | Жоқ | Жоқ |
 
 Employee cashier міндетін де атқарса, бастапқыда кең Administrator рөлін ойланбай бермейміз. Оны іске асыру алдында жеке capability ретінде жобалау қажет. MVP-де үш рөл және жоғарыдағы шекаралар қолданылады.
+
+Қызметкер карточкасының Administrator өзгерте алатын бастапқы өрістері: display_name, started_on, ended_on және операциялық is_active (A28 бойынша расталады). Auth identity, role, membership, account links, rate/earnings бұл командаға кірмейді. Employee-ді inactive ету оның performer ретінде жаңа қызмет енгізуін тоқтатады; membership арқылы басқа рөлдегі қолжетімділік автоматты жойылды деп саналмайды. Аккаунтты толық тоқтатуды Owner бөлек не атомарлы offboarding командасымен орындайды.
+
+Owner account reassignment кезінде салонды lock-пен қорғайды, ескі link.valid_to-ны бекітеді, жаңа link ашады және actor/reason/audit жазады. Бір уақытта бір employee бір active membership-ке, бір membership бір active employee-ге ғана сәйкес. Ownership RLS ағымдағы link-ке қарайды: ескі аккаунттың сол employee атынан жаңа қызмет жазу/табысын оқу құқығы жоғалады; оның бастапқы audit actor ID-лері өзгермейді. Profile.disabled_at және membership.is_active әр қорғалған операцияда тексеріледі.
 
 ## 2. Authentication және сессия
 
@@ -49,13 +59,20 @@ Shared device-тен шығу, белсенді емес аккаунтты де
 | --- | --- | --- |
 | Membership/profile | Өз профиль; Owner өз салон мүшелігін басқарады | Role/status тек Owner командасымен; өзін Owner етуге жол жоқ |
 | Каталог | Active membership; Employee үшін қажетті каталог өрістері | Owner/Administrator scoped command |
-| Visits/services | Owner/Administrator salon scope; Employee өз қызмет жолы және қауіпсіз visit summary | Command арқылы performer/баға/күн тексеріледі |
+| Visits/services/participants | Owner/Administrator salon scope; Employee active participant visit summary және өз тарихи service жолдары | Performer active account link-тен, жаңа append үшін active participant міндетті; visit number access бермейді |
 | Customers/consents | Owner/Administrator | Бақыланатын команда; Employee raw access жоқ |
 | Rates/earnings | Owner немесе нақты employee ownership | Тек Owner ережесі және trusted есептеу |
 | Payments/expenses/closure | Owner/Administrator рөл шегінде | Тек транзакциялық command |
 | Audit | Role-specific safe projection | Тек DB trigger/trusted command; update/delete жоқ |
+| Account links | Өзіне қажетті current binding; Owner салондағы тарихты оқиды | Owner-only link/reassign; Admin generic employee edit арқылы жаза алмайды |
+| Employee day checks/verifications | Өз employee тізімі; Owner/Admin операциялық current/stale күйі | Employee өзінің data_version-ын растайды; Admin оның атынан растау жасамайды |
+| Data-quality issues | Өз scope; Admin операциялық summary; Owner сезімтал дерек | Issue шешімі domain permission-ға бағынады; pending_commission жай dismiss етілмейді |
 
 RLS жолдарды шектейді, бағандарды өздігінен жасырмайды. Employee-ге raw visit/customer жолын бермеу үшін бағандық GRANT және қауіпсіз view/RPC қолданылады. Earnings бөлек кестеде. Safe summary басқа орындаушының қызметін, visit толық сомасын немесе телефонды жарияламайды. Аудит JSON-ы да рөлге сай сүзгіленеді.
+
+Shared visit summary тек visit ID/нөмірі, open/completed күйі және өзіне қатысты рұқсаттарды қайтарады. Басқа participant-тың rate, service amount, earnings, payment не customer contact өрістері берілмейді. Participant grant-ін жою бұрынғы өз қызметтерін оқуды автоматты жоймайды, бірақ жаңа append-ті тоқтатады; profile/membership/account link бөлек жарамды болуы тиіс. Pending комиссияны шешу үшін құпия rate-ті Administrator UI-ына беру қажет емес.
+
+Authorization `recorded_business_date` ашық болуын ғана тексермейді: effective күн closed/unreconciled болса, late entry/correction-ға Owner approval және reason керек. Unreconciled historical day metadata және gap opening baseline-ды тек Owner жасайды; ақша санау нәтижесі ойдан толтырылмайды. Approval ID-ін клиент payload-ынан сенімді деп қабылдамаймыз. Payment correction output-ы түпкі payment-пен бір салонда/visit ішінде болуы, original FK және уақыт мағынасы DB командасында тексеріледі.
 
 Оқу view-ларында қолдайтын PostgreSQL нұсқасында `security_invoker = true`, тиісті underlying GRANT және RLS бірге қолданылады. Құпия projection үшін тексерілген функция немесе exposed емес schema таңдалады. Policy helper membership кестесін рекурсивті оқып шексіз RLS тізбегін жасамауы тиіс. [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
@@ -73,6 +90,9 @@ Server Action айналып өтіліп, RPC тікелей шақырылса
 - CSV-де қауіпті формула басталатын мәтіндер қорғалады; XLSX мәтін ұяшықтары formula ретінде жазылмайды. Export URL public bucket-ке қойылмайды; default жауап streaming/no-store.
 - Жеке беттерге analytics session replay қосылмайды. Клиент деректерін bug report, AI prompt немесе screenshot-қа көшіру default workflow емес.
 - Файл тіркемелері MVP-ге кірмейді; кейін енгізілсе private storage, size/type тексеруі және қысқа мерзімді signed URL қажет.
+- Нақты customer/employee identity, Auth credential, payment reference және қаржылық операциялар Git commit, тест fixture немесе жоспар мысалына кірмейді. Жоспардағы барлық сандар жасанды.
+
+Қауіпсіздікті қабылдау критерийлері: [AC-07–AC-15](02-mvp-specification.md#8-қабылдау-критерийлері). Әр тыйым UI-да ғана емес, тікелей RPC/REST және DB integration деңгейінде тексеріледі. Actor мен reason аудитте бар болуы, grant/revoke/reassignment history сақталуы және audit жазылмаса command rollback болуы міндетті.
 
 ## Дербес деректер және орналастыру
 
